@@ -2,6 +2,7 @@ package com.cleanroommc.tokenenvoy;
 
 import com.cleanroommc.tokenenvoy.resource.TokenResourceAction;
 import com.cleanroommc.tokenenvoy.task.ReplaceClassTokens;
+import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -9,8 +10,6 @@ import org.gradle.api.file.Directory;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.plugins.ExtensionAware;
-import org.gradle.api.plugins.ExtensionContainer;
-import org.gradle.api.plugins.PluginManager;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Provider;
@@ -18,6 +17,7 @@ import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.compile.AbstractCompile;
 
 import java.lang.reflect.Method;
 
@@ -94,13 +94,7 @@ public abstract class TokenEnvoyPlugin implements Plugin<Project> {
         Provider<Directory> raw = project.getLayout().getBuildDirectory().dir("tokenEnvoy/raw-classes/" + language + "/" + sourceSet.getName());
 
         TaskProvider<Task> compile = project.getTasks().named(compileName);
-        Provider<Directory> compileDestination = compile.flatMap(task -> {
-            DirectoryProperty dest = destinationDirectory(task);
-            if (dest == null) {
-                throw new IllegalStateException("Task '" + compileName + "' has no destinationDirectory");
-            }
-            return dest;
-        });
+        Provider<Directory> compileDestination = compile.flatMap(TokenEnvoyPlugin::destinationDirectory);
 
         var resourcesOnly = spec.getResourcesOnly();
         TaskProvider<ReplaceClassTokens> replace = project.getTasks().register(replaceName, ReplaceClassTokens.class, task -> {
@@ -117,12 +111,7 @@ public abstract class TokenEnvoyPlugin implements Plugin<Project> {
             task.dependsOn(compile);
         });
 
-        compile.configure(task -> {
-            DirectoryProperty compileDest = destinationDirectory(task);
-            if (compileDest != null) {
-                compileDest.set(spec.getResourcesOnly().flatMap(only -> only ? published : raw));
-            }
-        });
+        compile.configure(task -> destinationDirectory(task).set(spec.getResourcesOnly().flatMap(only -> only ? published : raw)));
 
         sourceSet.compiledBy(replace);
         project.getTasks().named(sourceSet.getClassesTaskName(), classes -> classes.dependsOn(replace));
@@ -154,14 +143,20 @@ public abstract class TokenEnvoyPlugin implements Plugin<Project> {
     }
 
     private static DirectoryProperty destinationDirectory(Task task) {
+        if (task instanceof AbstractCompile compileTask) {
+            return compileTask.getDestinationDirectory();
+        }
+        // Kotlin...
         try {
             Method method = task.getClass().getMethod("getDestinationDirectory");
             Object value = method.invoke(task);
             if (value instanceof DirectoryProperty directory) {
                 return directory;
             }
-        } catch (ReflectiveOperationException ignored) { }
-        return null;
+            throw new GradleException("Unable to get destination directory. " + task.getClass() + "::getDestinationDirectory returned type " + value.getClass());
+        } catch (Throwable t) {
+            throw new GradleException("Unable to get destination directory", t);
+        }
     }
 
     private static String capitalize(String value) {

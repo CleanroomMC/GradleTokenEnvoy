@@ -1,0 +1,63 @@
+plugins {
+    id 'java-gradle-plugin'
+    id 'maven-publish'
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+}
+
+group = 'com.cleanroommc'
+version = '0.1.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.ow2.asm:asm:9.8'
+    implementation 'org.ow2.asm:asm-tree:9.8'
+
+    testImplementation gradleTestKit()
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+gradlePlugin {
+    plugins {
+        tokenEnvoy {
+            id = "${group}.tokenenvoy"
+            implementationClass = "${group}.tokenenvoy.TokenEnvoyPlugin"
+            displayName = 'Token Envoy'
+            description = 'Token replacement in compiled classes (ASM) and resources'
+        }
+    }
+}
+
+tasks.named('jar', Jar) {
+    manifest {
+        attributes 'Implementation-Version': version
+    }
+}
+
+publishing {
+    publications {
+        pluginMaven(MavenPublication) {
+            artifactId = 'tokenenvoy'
+        }
+    }
+    repositories {
+        maven {
+            name = 'CleanroomMaven'
+            url = 'https://repo.cleanroommc.com/releases'
+            credentials(PasswordCredentials)
+            authentication {
+                basic(BasicAuthentication)
+            }
+        }
+    }
+}

@@ -36,12 +36,12 @@ tokenEnvoy {
         // resourcesOnly = true // default false. This would skip class rewriting
 
         classes {
-            include 'Tokens.class', 'com/example/Reference.class'
+            include '**/Tokens.class', 'com.example.Reference'
             exclude '**/internal/**'
         }
         resources {
             include 'mcmod.info', '**/*.json'
-            exclude 'skip.json'
+            exclude '**/skip.json'
         }
     }
 }
@@ -94,18 +94,20 @@ Source-set `set` calls override globals of the same name.
 `classes` and `resources` choose which files receive replacements.
 Files that do not match are still compiled or copied and their `@{NAME}` markers stay in place.
 
-- Exact file names (`Tokens.class`, `resources.json`) match that name in any directory
-- Paths (`com/example/Reference.class`) match relative to the class or resource output root
-- Globs: `*` one path segment, `**` any depth, `?` one character
+Patterns are Gradle Ant-style (`*`, `**`, `?`), relative to the class or resource output root.
+
+- A name without `/` or `**` matches only at that root (`mcmod.info`, `Tags.class`)
+- Use `**/Tags.class` to match that file name in any directory
+- Paths (`com/example/Reference.class`) match that relative path
 - Class patterns also accept a fully-qualified name (`com.example.Tokens`)
 - Empty includes mean every file; any matching exclude wins
 - Global filters are union'd with the source set's filters
 
 ```groovy
 tokenEnvoy {
-    includeClasses 'Tags.class'
+    includeClasses '**/Tags.class'
     includeResources 'mcmod.info', '**/*.json'
-    excludeResources 'skip.json'
+    excludeResources '**/skip.json'
 }
 ```
 

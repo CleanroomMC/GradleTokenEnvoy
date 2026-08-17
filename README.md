@@ -6,17 +6,6 @@ Source files are never rewritten.
 ## Apply
 
 ```groovy
-// settings.gradle
-pluginManagement {
-    repositories {
-        maven {
-            url = 'https://maven.cleanroommc.com'
-        }
-        gradlePluginPortal()
-    }
-}
-
-// build.gradle
 plugins {
     id 'java'
     id 'com.cleanroommc.tokenenvoy' version '0.1.0'

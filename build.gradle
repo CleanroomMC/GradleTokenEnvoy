@@ -1,6 +1,8 @@
 plugins {
     id 'java-gradle-plugin'
     id 'maven-publish'
+    id 'com.gradle.plugin-publish' version '2.1.1'
+    id 'signing'
 }
 
 java {
@@ -8,7 +10,7 @@ java {
 }
 
 group = 'com.cleanroommc'
-version = '0.1.0'
+version = '1.0.0'
 
 repositories {
     mavenCentral()
@@ -28,12 +30,20 @@ test {
 }
 
 gradlePlugin {
+    website = 'https://github.com/CleanroomMC/GradleTokenEnvoy'
+    vcsUrl = 'https://github.com/CleanroomMC/GradleTokenEnvoy.git'
     plugins {
         tokenEnvoy {
             id = "${group}.tokenenvoy"
             implementationClass = "${group}.tokenenvoy.TokenEnvoyPlugin"
             displayName = 'Token Envoy'
-            description = 'Token replacement in compiled classes (ASM) and resources'
+            description = 'Replaces tokens in compiled classes and resources without rewriting sources.'
+            tags.set(['token', 'replacement', 'asm', 'resources'])
+            compatibility {
+                features {
+                    configurationCache = true
+                }
+            }
         }
     }
 }
@@ -44,20 +54,26 @@ tasks.named('jar', Jar) {
     }
 }
 
+tasks.withType(Javadoc).configureEach {
+    options.addStringOption('Xdoclint:none', '-quiet')
+}
+
 publishing {
     publications {
         pluginMaven(MavenPublication) {
             artifactId = 'tokenenvoy'
         }
     }
-    repositories {
-        maven {
-            name = 'CleanroomMaven'
-            url = 'https://repo.cleanroommc.com/releases'
-            credentials(PasswordCredentials)
-            authentication {
-                basic(BasicAuthentication)
-            }
-        }
+}
+
+def signingKey = providers.gradleProperty('signingKey')
+def signingPassword = providers.gradleProperty('signingPassword')
+
+signing {
+    required = {
+        gradle.taskGraph.allTasks.any { it.name == 'publishPlugins' }
+    }
+    if (signingKey.present && signingPassword.present) {
+        useInMemoryPgpKeys(signingKey.get(), signingPassword.get())
     }
 }

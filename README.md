@@ -5,10 +5,26 @@ Source files are never rewritten.
 
 ## Apply
 
+From the [Gradle Plugin Portal](https://plugins.gradle.org/plugin/com.cleanroommc.tokenenvoy):
+
 ```groovy
 plugins {
     id 'java'
-    id 'com.cleanroommc.tokenenvoy' version '0.1.0'
+    id 'com.cleanroommc.tokenenvoy' version '1.1.0'
+}
+```
+
+Or from [CleanroomMC's maven](https://maven.cleanroommc.com):
+
+```groovy
+// settings.gradle
+pluginManagement {
+    repositories {
+        maven {
+            url = 'https://maven.cleanroommc.com'
+        }
+        gradlePluginPortal()
+    }
 }
 ```
 

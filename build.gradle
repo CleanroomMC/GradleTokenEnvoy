@@ -1,4 +1,5 @@
 plugins {
+    id 'com.cleanroommc.versioning' version '1.0.0'
     id 'java-gradle-plugin'
     id 'maven-publish'
     id 'com.gradle.plugin-publish' version '2.1.1'
@@ -10,15 +11,14 @@ java {
 }
 
 group = 'com.cleanroommc'
-version = '1.0.0'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation 'org.ow2.asm:asm:9.8'
-    implementation 'org.ow2.asm:asm-tree:9.8'
+    implementation 'org.ow2.asm:asm:9.10.1'
+    implementation 'org.ow2.asm:asm-tree:9.10.1'
 
     testImplementation gradleTestKit()
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
@@ -62,6 +62,16 @@ publishing {
     publications {
         pluginMaven(MavenPublication) {
             artifactId = 'tokenenvoy'
+        }
+    }
+    repositories {
+        maven {
+            name = 'CleanroomMaven'
+            url = 'https://maven.cleanroommc.com'
+            credentials(PasswordCredentials)
+            authentication {
+                basic(BasicAuthentication)
+            }
         }
     }
 }
